@@ -1,0 +1,40 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".DemoActivity"
+    tools:ignore="MergeRootFrame" >
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="Bacon ipsum dolor sit amet eu sint tenderloin spare ribs biltong magna. In est cow tri-tip. Pig shank chuck pork belly nulla t-bone biltong turkey brisket kielbasa anim ex shankle cow. Culpa pastrami velit adipisicing nisi fugiat short ribs, pork loin in doner bacon reprehenderit non ribeye. Pig beef corned beef, meatloaf flank eiusmod jowl pancetta shoulder magna."
+        android:id="@+id/bacon"
+        android:layout_alignParentRight="false"
+        android:layout_marginLeft="4dip"
+        android:layout_toRightOf="@+id/demo_kitten"
+        android:layout_centerVertical="true" />
+
+    <ImageView
+        android:layout_width="200dip"
+        android:layout_height="200dip"
+        android:id="@+id/demo_kitten"
+        android:src="@drawable/kitten"
+        android:scaleType="fitCenter"
+        android:adjustViewBounds="true"
+        android:layout_alignParentTop="false"
+        android:layout_marginLeft="123dp"
+        android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/show_again"
+        android:id="@+id/repeatButton"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_margin="4dip" />
+</RelativeLayout>

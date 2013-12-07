@@ -1,0 +1,9 @@
+out
+bin
+gen
+.gradle
+gradlew
+gradlew.bat
+.idea
+proguard_logs
+*.iml

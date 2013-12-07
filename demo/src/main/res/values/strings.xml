@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Spotlight Demo</string>
+    <string name="show_again">Show Again</string>
+    <string name="spotlightIntroTitle">Spotlight? What Spotlight?</string>
+    <string name="spotlightIntroDetail">It may be the name of the library, but the Spotlight is optional.
+        There will be some Spotlights later, after these other features.</string>
+    <string name="spotlightFluentTitle">Ease of Development</string>
+    <string name="spotlightFluentDetail">A fluent interface simplifies producing Scripts with multiple
+        Scenes:\n\n%s\n\nThe Script is the primary interface to the library. Adding Scenes to the Script adds new screens to the tutorial, and adding an Actor to a Scene will place a spotlight on the display.</string>
+    <string name="spotlightTransitionsTitle">Support for Transitions</string>
+    <string name="spotlightTransitionsDetail">A hard cut is the default transition, but a fade is also
+        available. This Scene was presented with a two-second fade. The default duration for transitions is the system \"short\" animation duration.\n\nBecause transitions are associated with Scenes, a special empty Scene is used to control transition out of the last Scene. The SceneBuilder\'s end method will add this scene, if a transition is currently enabled.</string>
+    <string name="spotlightDefaultsTitle">Defaults</string>
+    <string name="spotlightDefaultsDetail">While most Scene properties are cleared for each new scene -
+        for example, the fade used for the last scene is not repeated for this one - custom layouts and
+        transitions also have setDefault methods that cause the following scenes to reuse a setting.
+        \n\nThe next few Scenes will all use a short fade.</string>
+    <string name="spotlightLayoutsTitle">Custom Text Layouts</string>
+    <string name="spotlightLayoutsDetail">This Scene uses a custom text layout. Any layout that contains
+        TextViews with the same IDs as in the default layout may be used. Custom layouts may be set for
+        the Button and Spotlight as well - for these, the root of the layout must be of the correct type.</string>
+    <string name="spotlightCollapseDetail">The title and detail text are both optional, and the default
+        layout will collapse either if not present.</string>
+    <string name="spotlightKittenTitle">Finally, A Spotlight!</string>
+    <string name="spotlightKittenDetail">It\'s about time! The previous examples demonstrated most of the
+        ways that Scenes can be customized, but didn\'t highlight anything. But look, here\'s a kitten!</string>
+    <string name="spotlightAroundBaconTitle">Another Spotlight</string>
+    <string name="spotlightAroundBaconDetail">This certainly is some meaty text. As with the kitten, the
+        Actor for this Scene is a ViewActor with the default configuration, which circumscribes the selected View.
+        The layout for this demo makes it a bit awkward in portrait mode.</string>
+    <string name="spotlightActorConfigurationTitle">Spotlight Actor Configuration</string>
+    <string name="spotlightActorConfigurationDetail">ViewActors can also be configured to inscribe the
+        spotlight in the target instead of circumscribing the target. This may be more comfortable for
+        very tall or wide Views.</string>
+    <string name="spotlightSceneClearDefaultsTitle">Restoring Original Defaults</string>
+    <string name="spotlightSceneClearDefaultsDetail">Scene properties for which defaults can be set also
+        have matching clearDefault methods to restore the normal default behavior. The default transition
+        was cleared before building this scene, restoring the original hard cut transition.</string>
+    <string name="spotlightOneShotTitle">One-Shot Instructions</string>
+    <string name="spotlightOneShotDetail">The other Scenes in this demo will only display once, but can
+        be repeated by pressing the \"Show Again\" button.</string>
+    <string name="aboutText">The <a href="https://github.com/Unhelpful/Spotlight">Spotlight Demo and Library</a> are Open Source Software.
+        \n\nLicensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>
+        (the "License"); you may not use this file except in compliance with the License.
+        \n\nUnless required by applicable law or agreed to in writing, software
+            distributed under the License is distributed on an "AS IS" BASIS,
+            WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+            See the License for the specific language governing permissions and
+            limitations under the License.</string>
+    <string name="action_about">About</string>
+</resources>

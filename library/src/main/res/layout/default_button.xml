@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Button xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:text="Ok"
+    android:background="#33b5e5"
+    android:layout_marginLeft="4dip"
+    android:layout_marginTop="4dip"
+    android:layout_marginRight="4dip"
+    android:layout_marginBottom="4dip"
+    android:minHeight="10dip"
+    android:minWidth="20dip"
+    android:paddingLeft="6dip"
+    android:paddingRight="6dip"
+    android:paddingTop="4dip"
+    android:paddingBottom="4dip">
+
+</Button>

@@ -1,0 +1,78 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.6.+'
+    }
+}
+apply plugin: 'android'
+
+repositories {
+    mavenCentral()
+}
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion '18.1.0'
+
+    defaultConfig {
+        minSdkVersion 11
+        targetSdkVersion 19
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_6
+        targetCompatibility JavaVersion.VERSION_1_6
+    }
+
+    signingConfigs {
+        release {
+            // We can leave these in environment variables
+            storeFile file(System.getenv()['HOME'] + '/.keystore')
+            keyAlias 'unhelpful'
+
+            // These two lines make gradle believe that the signingConfigs
+            // section is complete. Without them, tasks like installRelease
+            // will not be available!
+            storePassword "notYourRealPassword"
+            keyPassword "notYourRealPassword"
+        }
+    }
+
+    buildTypes {
+        release {
+            runProguard true
+            proguardFile getDefaultProguardFile('proguard-android-optimize.txt')
+            signingConfig signingConfigs.release
+        }
+    }
+
+    productFlavors {
+        defaultFlavor {
+        }
+        optimized {
+            proguardFile getDefaultProguardFile('proguard-android-optimize.txt')
+        }
+    }
+    task askForPasswords << {
+        // Must create String because System.readPassword() returns char[]
+        // (and assigning that below fails silently)
+        def storePw = new String(System.console().readPassword("Keystore password: "))
+        def keyPw  = new String(System.console().readPassword("Key password: "))
+
+        android.signingConfigs.release.storePassword = storePw
+        android.signingConfigs.release.keyPassword = keyPw
+    }
+
+    def taskPattern = ~"(^|:)package.*Release\$"
+    tasks.whenTaskAdded { theTask ->
+        if (taskPattern.matcher(theTask.name)) {
+            theTask.dependsOn "askForPasswords"
+        }
+    }
+}
+
+dependencies {
+    compile project(':library');
+}

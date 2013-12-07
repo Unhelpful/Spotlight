@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="Stage">
+        <attr name="stageBackgroundColor" format="color"/>
+        <attr name="stageLabelLayout" format="reference"/>
+        <attr name="stageSpotlightLayout" format="reference"/>
+        <attr name="stageButtonLayout" format="reference"/>
+    </declare-styleable>
+    <declare-styleable name="Spotlight">
+        <attr name="spotlightColor" format="color"/>
+        <attr name="spotlightBorderWidth" format="dimension"/>
+    </declare-styleable>
+    <declare-styleable name="AppTheme">
+        <attr name="stageStyle" format="reference"/>
+        <attr name="spotlightStyle" format="reference"/>
+    </declare-styleable>
+</resources>

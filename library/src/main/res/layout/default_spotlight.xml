@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<us.looking_glass.spotlight.draw.RingSpotlight
+
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginLeft="4dip"
+    android:layout_marginTop="4dip"
+    android:layout_marginRight="4dip"
+    android:layout_marginBottom="4dip"
+    >
+
+</us.looking_glass.spotlight.draw.RingSpotlight>
