@@ -285,22 +285,6 @@ public class Stage extends ViewGroup implements View.OnTouchListener {
         return label.getMeasuredHeight();
     }
 
-    private static int circleFit(int radius, int width) {
-        if (width > radius)
-            return -1;
-        width *= width;
-        radius *= radius;
-        return (int) Math.ceil(Math.sqrt(radius - width));
-    }
-
-    private static int distance(int x1, int y1, int x2, int y2) {
-        int x = x2 - x1;
-        int y = y2 - y1;
-        x *= x;
-        y *= y;
-        return (int) Math.ceil(Math.sqrt(x + y));
-    }
-
     void updateChildViews() {
         int nextLayout = scene == null ? -1 : scene.getSpotlightLayout();
         if (nextLayout == -1)

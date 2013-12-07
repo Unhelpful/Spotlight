@@ -62,16 +62,17 @@ public class ViewActor implements Actor, View.OnLayoutChangeListener {
         float size = 1;
         switch (spotlightPlacement) {
             case AROUND:
-                size = (float) Math.sqrt(targetHeight * targetHeight + targetWidth * targetWidth) / 2 + innerPadding / spotlightSize;
+                size = (float) Math.sqrt(targetHeight * targetHeight + targetWidth * targetWidth) / 2;
+                size = size * spotlightSize + innerPadding;
                 break;
             case INSIDE:
-                size = Math.min(targetWidth, targetHeight) / 2 - host.getSpotlight().getBorder() + innerPadding / spotlightSize;
+                size = Math.min(targetWidth, targetHeight) / 2 - host.getSpotlight().getBorder();
+                size = size * spotlightSize - innerPadding;
                 break;
             case FIXED:
-                size = 1;
+                size = spotlightSize;
                 break;
         }
-        size *= spotlightSize;
         center.x = x;
         center.y = y;
         radius = size;
@@ -109,8 +110,18 @@ public class ViewActor implements Actor, View.OnLayoutChangeListener {
     @Override
     public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
         dirty = true;
-        if (host != null)
-            host.requestLayout();
+        if (host != null) {
+            if (host.isInLayout()) {
+                host.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        host.requestLayout();
+                    }
+                });
+            }
+            else
+                host.requestLayout();
+        }
     }
     
     public static class Builder {
