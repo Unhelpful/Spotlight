@@ -18,7 +18,9 @@ package us.looking_glass.spotlight.demo;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.res.Configuration;
 import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
 import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.Menu;
@@ -27,13 +29,15 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import us.looking_glass.spotlight.Script;
 import us.looking_glass.spotlight.actor.ViewActor;
 
-public class DemoActivity extends Activity implements View.OnClickListener {
+public class DemoActivity extends ActionBarActivity implements View.OnClickListener {
     private static final String TAG = DemoActivity.class.getSimpleName();
+    static final boolean debug = true;
 
     Script script;
     String versionText;
@@ -43,6 +47,7 @@ public class DemoActivity extends Activity implements View.OnClickListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_demo);
+        setOrientation(getResources().getConfiguration().orientation);
         try {
             versionText = "v" + getPackageManager().getPackageInfo(this.getPackageName(), 0).versionName;
         } catch (Exception e) {
@@ -69,8 +74,8 @@ public class DemoActivity extends Activity implements View.OnClickListener {
                 .setTitleText(R.string.spotlightDefaultsTitle)
                 .setDetailText(R.string.spotlightDefaultsDetail)
                 .add()
-                .setOneShotID(5)
                 .setDefaultTransition(Script.FADE)
+                .setOneShotID(5)
                 .setLabelLayout(R.layout.demo_custom_label)
                 .setTitleText(R.string.spotlightLayoutsTitle)
                 .setDetailText(R.string.spotlightLayoutsDetail)
@@ -112,6 +117,14 @@ public class DemoActivity extends Activity implements View.OnClickListener {
         script.show();
     }
 
+    public void setOrientation(int orientation) {
+        Logv("setOrientation: %d", orientation);
+        if (orientation == Configuration.ORIENTATION_PORTRAIT)
+            ((LinearLayout) findViewById(R.id.layoutContainer)).setOrientation(LinearLayout.VERTICAL);
+        else if (orientation == Configuration.ORIENTATION_LANDSCAPE)
+            ((LinearLayout) findViewById(R.id.layoutContainer)).setOrientation(LinearLayout.HORIZONTAL);
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -128,6 +141,12 @@ public class DemoActivity extends Activity implements View.OnClickListener {
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        setOrientation(newConfig.orientation);
     }
 
     void openAboutPopup () {
@@ -148,5 +167,21 @@ public class DemoActivity extends Activity implements View.OnClickListener {
     @Override
     public void onClick(View v) {
         script.show(true);
+    }
+
+    private static final void Logd(String text, Object... args) {
+        if (debug) {
+            if (args != null && args.length > 0)
+                text = String.format(text, args);
+            Log.d(TAG, text);
+        }
+    }
+
+    private static final void Logv(String text, Object... args) {
+        if (debug) {
+            if (args != null && args.length > 0)
+                text = String.format(text, args);
+            Log.v(TAG, text);
+        }
     }
 }

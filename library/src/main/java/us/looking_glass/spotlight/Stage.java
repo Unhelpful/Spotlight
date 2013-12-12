@@ -25,6 +25,7 @@ import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -49,6 +50,7 @@ public class Stage extends ViewGroup implements View.OnTouchListener {
     private int curLabelLayout = -1;
     private int curButtonLayout = -1;
     private CharSequence origButtonText;
+    final static boolean testPreHC = true;
 
 
     public Spotlight getSpotlight() {
@@ -104,15 +106,19 @@ public class Stage extends ViewGroup implements View.OnTouchListener {
     }
 
     void setLayerMode(PorterDuff.Mode mode) {
-        Paint layerPaint = null;
-        if (mode != null) {
-            layerPaint = new Paint();
-            layerPaint.setXfermode(new PorterDuffXfermode(mode));
-        }
-        if (isHardwareAccelerated()) {
-            setLayerType(LAYER_TYPE_HARDWARE, layerPaint);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            Paint layerPaint = null;
+            if (mode != null) {
+                layerPaint = new Paint();
+                layerPaint.setXfermode(new PorterDuffXfermode(mode));
+            }
+            if (isHardwareAccelerated()) {
+                setLayerType(LAYER_TYPE_HARDWARE, layerPaint);
+            } else {
+                setLayerType(LAYER_TYPE_SOFTWARE, layerPaint);
+            }
         } else {
-            setLayerType(LAYER_TYPE_SOFTWARE, layerPaint);
+            setDrawingCacheEnabled(true);
         }
     }
 
@@ -121,48 +127,40 @@ public class Stage extends ViewGroup implements View.OnTouchListener {
         Rect visible = new Rect();
         ((Activity) getContext()).getWindow().getDecorView().getWindowVisibleDisplayFrame(visible);
         int result = visible.top;
-        if (getContext().getTheme().resolveAttribute(android.R.attr.actionBarSize, tv, true))
-        {
+        if (getContext().getTheme().resolveAttribute(android.R.attr.actionBarSize, tv, true) ||
+                getContext().getTheme().resolveAttribute(getResources().getIdentifier("actionBarSize", "attr", getContext().getPackageName()), tv, true))
             result += TypedValue.complexToDimensionPixelSize(tv.data, getResources().getDisplayMetrics());
-        }
         return result;
+    }
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
+        setMeasuredDimension(
+                resolveSize(displayMetrics.widthPixels, widthMeasureSpec),
+                resolveSize(displayMetrics.heightPixels, heightMeasureSpec)
+        );
     }
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        for (int i = 0; i < getChildCount(); i++) {
-            layoutFromParams(getChildAt(i));
-        }
-    }
-
-    private final void layoutFromParams(View v) {
-        LayoutParams lps = (LayoutParams) v.getLayoutParams();
-        v.layout(lps.left, lps.top, lps.right, lps.bottom);
-    }
-
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        Logv("onMeasure");
-        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
-        int myWidth = resolveSize(displayMetrics.widthPixels, widthMeasureSpec);
-        int myHeight = resolveSize(displayMetrics.heightPixels, heightMeasureSpec);
-        setMeasuredDimension(myWidth, myHeight);
-        myWidth = getMeasuredWidth();
-        myHeight = getMeasuredHeight();
+        int myWidth = getMeasuredWidth();
+        int myHeight = getMeasuredHeight();
         Logv("measured dimensions: %dx%d", myWidth, myHeight);
         int unspecified = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED);
         button.measure(unspecified, unspecified);
-        LayoutParams buttonParams = (LayoutParams) button.getLayoutParams();
-        LayoutParams spotlightParams = (LayoutParams) spotlight.getLayoutParams();
-        LayoutParams labelParams = (LayoutParams) label.getLayoutParams();
+        MarginLayoutParams buttonParams = (MarginLayoutParams) button.getLayoutParams();
+        MarginLayoutParams spotlightParams = (MarginLayoutParams) spotlight.getLayoutParams();
+        MarginLayoutParams labelParams = (MarginLayoutParams) label.getLayoutParams();
         int buttonWidth = button.getMeasuredWidth();
         int buttonHeight = button.getMeasuredHeight();
-        buttonParams.right = myWidth;
-        buttonParams.bottom = myHeight;
-        buttonParams.left = buttonParams.right - buttonWidth - buttonParams.rightMargin - buttonParams.leftMargin;
-        buttonParams.top = buttonParams.bottom - buttonHeight - buttonParams.bottomMargin - buttonParams.topMargin;
-        spotlightParams.left = spotlightParams.right = myWidth;
-        spotlightParams.top = spotlightParams.bottom = myHeight;
+        int buttonLayoutRight = myWidth;
+        int buttonLayoutBottom = myHeight;
+        int buttonLayoutLeft = buttonLayoutRight - buttonWidth - buttonParams.rightMargin - buttonParams.leftMargin;
+        int buttonLayoutTop = buttonLayoutBottom - buttonHeight - buttonParams.bottomMargin - buttonParams.topMargin;
+        int spotlightLayoutLeft = myWidth;
+        int spotlightLayoutRight = myWidth;
+        int spotlightLayoutTop = myHeight;
+        int spotlightLayoutBottom = myHeight;
         Point spotlightPosition = null;
         if (scene != null && scene.getActor() != null)
             spotlightPosition = scene.getActor().getPosition();
@@ -180,99 +178,99 @@ public class Stage extends ViewGroup implements View.OnTouchListener {
             spotlight.measure(unspecified, unspecified);
             int spotlightRadius = spotlight.getOuterRadius();
             Logv("spotlight position: %d,%d diameter: %d, measured dimensions: %dx%d", spotlightPosition.x, spotlightPosition.y, spotlight.getOuterDiameter(), spotlight.getMeasuredWidth(), spotlight.getMeasuredHeight());
-            spotlightParams.left = spotlightPosition.x - spotlightRadius - spotlightParams.leftMargin;
-            spotlightParams.right = spotlightPosition.x + spotlightRadius + spotlightParams.rightMargin;
-            spotlightParams.top = spotlightPosition.y - spotlightRadius - spotlightParams.topMargin;
-            spotlightParams.bottom = spotlightPosition.y + spotlightRadius + spotlightParams.bottomMargin;
+            spotlightLayoutLeft = spotlightPosition.x - spotlightRadius - spotlightParams.leftMargin;
+            spotlightLayoutRight = spotlightPosition.x + spotlightRadius + spotlightParams.rightMargin;
+            spotlightLayoutTop = spotlightPosition.y - spotlightRadius - spotlightParams.topMargin;
+            spotlightLayoutBottom = spotlightPosition.y + spotlightRadius + spotlightParams.bottomMargin;
         }
 
         int labelHeight = 0;
         int labelHorizontalMargins = labelParams.leftMargin + labelParams.rightMargin;
         int labelVerticalMargins = labelParams.topMargin + labelParams.bottomMargin;
         boolean gotLabel = true;
+        int labelLayoutLeft = 0;
+        int labelLayoutTop = 0;
+        int labelLayoutRight = 0;
+        int labelLayoutBottom = 0;
         do {
             int v;
             labelHeight = measureLabel(myWidth - labelHorizontalMargins);
-            v = Math.min(spotlightParams.top, buttonParams.top);
+            v = Math.min(spotlightLayoutTop, buttonLayoutTop);
             if (labelHeight <= v - topSpace - labelVerticalMargins) {
                 Logv("placed label above Spotlight");
-                labelParams.left = labelParams.leftMargin;
-                labelParams.top = topSpace + labelParams.topMargin;
-                labelParams.right = labelParams.left + label.getMeasuredWidth();
-                labelParams.bottom = labelParams.top + labelHeight;
+                labelLayoutLeft = labelParams.leftMargin;
+                labelLayoutTop = topSpace + labelParams.topMargin;
+                labelLayoutRight = labelLayoutLeft + label.getMeasuredWidth();
+                labelLayoutBottom = labelLayoutTop + labelHeight;
                 break;
             } else
                 Logv("not enough space above Spotlight: %d", v - topSpace - labelVerticalMargins);
-            v = (buttonParams.top > spotlightParams.bottom ? buttonParams.top : myHeight) - spotlightParams.bottom;
+            v = (buttonLayoutTop > spotlightLayoutBottom ? buttonLayoutTop : myHeight) - spotlightLayoutBottom;
             if (labelHeight <= v - labelVerticalMargins) {
                 Logv("placed label below Spotlight");
-                labelParams.left = labelParams.leftMargin;
-                labelParams.top = spotlightParams.bottom + labelParams.topMargin;
-                labelParams.right = labelParams.left + label.getMeasuredWidth();
-                labelParams.bottom = labelParams.top + labelHeight;
+                labelLayoutLeft = labelParams.leftMargin;
+                labelLayoutTop = spotlightLayoutBottom + labelParams.topMargin;
+                labelLayoutRight = labelLayoutLeft + label.getMeasuredWidth();
+                labelLayoutBottom = labelLayoutTop + labelHeight;
                 break;
             } else
                 Logv("not enough space below Spotlight: %d", v - labelVerticalMargins);
-            labelHeight = measureLabel(spotlightParams.left - labelHorizontalMargins);
-            v = buttonParams.left < spotlightParams.left ? buttonParams.top : myHeight;
+            labelHeight = measureLabel(spotlightLayoutLeft - labelHorizontalMargins);
+            v = buttonLayoutLeft < spotlightLayoutLeft ? buttonLayoutTop : myHeight;
             if (labelHeight <= v - topSpace - labelVerticalMargins) {
                 Logv("placed label left of Spotlight");
-                labelParams.left = labelParams.leftMargin;
-                labelParams.top = topSpace + labelParams.topMargin;
-                labelParams.right = labelParams.left + label.getMeasuredWidth();
-                labelParams.bottom = labelParams.top + labelHeight;
+                labelLayoutLeft = labelParams.leftMargin;
+                labelLayoutTop = topSpace + labelParams.topMargin;
+                labelLayoutRight = labelLayoutLeft + label.getMeasuredWidth();
+                labelLayoutBottom = labelLayoutTop + labelHeight;
                 break;
             } else
                 Logv("not enough space left of Spotlight: %d", v - topSpace - labelVerticalMargins);
-            labelHeight = measureLabel(myWidth - spotlightParams.right - labelHorizontalMargins);
-            v = buttonParams.right > spotlightParams.right ? buttonParams.top : myHeight;
+            labelHeight = measureLabel(myWidth - spotlightLayoutRight - labelHorizontalMargins);
+            v = buttonLayoutRight > spotlightLayoutRight ? buttonLayoutTop : myHeight;
             if (labelHeight <= v - topSpace - labelVerticalMargins) {
                 Logv("placed label right of Spotlight");
-                labelParams.left = spotlightParams.right + labelParams.leftMargin;
-                labelParams.top = topSpace + labelParams.topMargin;
-                labelParams.right = labelParams.left + label.getMeasuredWidth();
-                labelParams.bottom = labelParams.top + labelHeight;
+                labelLayoutLeft = spotlightLayoutRight + labelParams.leftMargin;
+                labelLayoutTop = topSpace + labelParams.topMargin;
+                labelLayoutRight = labelLayoutLeft + label.getMeasuredWidth();
+                labelLayoutBottom = labelLayoutTop + labelHeight;
                 break;
             } else
                 Logv("not enought space right of Spotlight: %d", v - topSpace - labelVerticalMargins);
-            labelHeight = measureLabel(buttonParams.left - labelHorizontalMargins);
-            v = spotlightParams.bottom < buttonParams.top ? spotlightParams.bottom : topSpace;
+            labelHeight = measureLabel(buttonLayoutLeft - labelHorizontalMargins);
+            v = spotlightLayoutBottom < buttonLayoutTop ? spotlightLayoutBottom : topSpace;
             if (labelHeight <= myHeight - v - labelVerticalMargins) {
                 Logv("placed label left of button");
-                labelParams.left = labelParams.leftMargin;
-                labelParams.top = v + labelParams.topMargin;
-                labelParams.right = labelParams.left + label.getMeasuredWidth();
-                labelParams.bottom = labelParams.top + labelHeight;
+                labelLayoutLeft = labelParams.leftMargin;
+                labelLayoutTop = v + labelParams.topMargin;
+                labelLayoutRight = labelLayoutLeft + label.getMeasuredWidth();
+                labelLayoutBottom = labelLayoutTop + labelHeight;
                 break;
             } else
                 Logv("not enought space left of button: %d", myHeight - v - labelVerticalMargins);
             Logv("label fit failed, using fallback fullscreen placement");
-            labelParams.left = labelParams.leftMargin;
-            labelParams.top = topSpace + labelParams.topMargin;
-            labelParams.right = myWidth - labelParams.rightMargin;
-            labelParams.bottom = myHeight - labelParams.bottomMargin;
-            int width = MeasureSpec.makeMeasureSpec(labelParams.right - labelParams.left, MeasureSpec.AT_MOST);
-            int height = MeasureSpec.makeMeasureSpec(labelParams.bottom - labelParams.top, MeasureSpec.AT_MOST);
+            labelLayoutLeft = labelParams.leftMargin;
+            labelLayoutTop = topSpace + labelParams.topMargin;
+            labelLayoutRight = myWidth - labelParams.rightMargin;
+            labelLayoutBottom = myHeight - labelParams.bottomMargin;
+            int width = MeasureSpec.makeMeasureSpec(labelLayoutRight - labelLayoutLeft, MeasureSpec.AT_MOST);
+            int height = MeasureSpec.makeMeasureSpec(labelLayoutBottom - labelLayoutTop, MeasureSpec.AT_MOST);
             label.measure(width, height);
         } while (false);
 
-        spotlightParams.left += spotlightParams.leftMargin;
-        spotlightParams.top += spotlightParams.topMargin;
-        spotlightParams.right -= spotlightParams.rightMargin;
-        spotlightParams.bottom -= spotlightParams.bottomMargin;
+        label.layout(labelLayoutLeft, labelLayoutTop, labelLayoutRight, labelLayoutBottom);
 
-        buttonParams.left += buttonParams.leftMargin;
-        buttonParams.top += buttonParams.bottomMargin;
-        buttonParams.right -= buttonParams.rightMargin;
-        buttonParams.bottom -= buttonParams.bottomMargin;
+        spotlightLayoutLeft += spotlightParams.leftMargin;
+        spotlightLayoutTop += spotlightParams.topMargin;
+        spotlightLayoutRight -= spotlightParams.rightMargin;
+        spotlightLayoutBottom -= spotlightParams.bottomMargin;
+        spotlight.layout(spotlightLayoutLeft, spotlightLayoutTop, spotlightLayoutRight, spotlightLayoutBottom);
 
-        for (int i = 0; i < getChildCount(); i++) {
-            View view = getChildAt(i);
-            if (view == spotlight || view == label || view == button)
-                continue;
-            else
-                view.setVisibility(GONE);
-        }
+        buttonLayoutLeft += buttonParams.leftMargin;
+        buttonLayoutTop += buttonParams.bottomMargin;
+        buttonLayoutRight -= buttonParams.rightMargin;
+        buttonLayoutBottom -= buttonParams.bottomMargin;
+        button.layout(buttonLayoutLeft, buttonLayoutTop, buttonLayoutRight, buttonLayoutBottom);
     }
 
     private int measureLabel(int width) {
@@ -362,22 +360,22 @@ public class Stage extends ViewGroup implements View.OnTouchListener {
 
     @Override
     protected boolean checkLayoutParams(ViewGroup.LayoutParams p) {
-        return p instanceof LayoutParams;
+        return p instanceof MarginLayoutParams;
     }
 
     @Override
     public ViewGroup.LayoutParams generateLayoutParams(AttributeSet attrs) {
-        return new LayoutParams(getContext(), attrs);
+        return new MarginLayoutParams(getContext(), attrs);
     }
 
     @Override
     protected ViewGroup.LayoutParams generateDefaultLayoutParams() {
-        return new LayoutParams(getContext(), null);
+        return new MarginLayoutParams(getContext(), null);
     }
 
     @Override
     protected ViewGroup.LayoutParams generateLayoutParams(ViewGroup.LayoutParams p) {
-        return new LayoutParams(p);
+        return new MarginLayoutParams(p);
     }
 
     public void setScene(Script.Scene scene) {
@@ -397,29 +395,6 @@ public class Stage extends ViewGroup implements View.OnTouchListener {
     @Override
     public boolean onTouch(View v, MotionEvent event) {
         return true;
-    }
-
-    public class LayoutParams extends MarginLayoutParams {
-        private int top = 0;
-        private int bottom = 0;
-        private int left = 0;
-        private int right = 0;
-
-        public LayoutParams(Context c, AttributeSet attrs) {
-            super(c, attrs);
-        }
-
-        public LayoutParams(int width, int height) {
-            super(width, height);
-        }
-
-        public LayoutParams(MarginLayoutParams source) {
-            super(source);
-        }
-
-        public LayoutParams(ViewGroup.LayoutParams source) {
-            super(source);
-        }
     }
 
     private static final void Logd(String text, Object... args) {

@@ -16,19 +16,22 @@
 
 package us.looking_glass.spotlight.actor;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Point;
+import android.os.Build;
 import android.util.Log;
 import android.view.View;
 
+import java.sql.BatchUpdateException;
+
 import us.looking_glass.spotlight.Stage;
 
-public class ViewActor implements Actor, View.OnLayoutChangeListener {
+public class ViewActor implements Actor {
     private final static String TAG = ViewActor.class.getSimpleName();
-    final static boolean debug = false;
+    final static boolean debug = true;
     private final Context context;
-    private boolean dirty = true;
     private Point center = new Point();
     private float radius = 0;
     private Stage host;
@@ -36,9 +39,11 @@ public class ViewActor implements Actor, View.OnLayoutChangeListener {
     private final int spotlightPlacement;
     private final float spotlightSize;
     private final float innerPadding;
+    private boolean dirty = true;
     public static final int AROUND = 1;
     public static final int INSIDE = 2;
     public static final int FIXED = 3;
+    Object listener = null;
 
     public ViewActor(Context context, View view, int placement, float size, float innerPadding) {
         this.context = context;
@@ -77,6 +82,8 @@ public class ViewActor implements Actor, View.OnLayoutChangeListener {
         center.y = y;
         radius = size;
         Logv("Target size: %dx%d radius: %f", targetWidth, targetHeight, radius);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+            dirty = false;
     }
 
     @Override
@@ -95,35 +102,18 @@ public class ViewActor implements Actor, View.OnLayoutChangeListener {
     @Override
     public void show(Stage host) {
         this.host = host;
-        if (view != null)
-            view.addOnLayoutChangeListener(this);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+            addListener();
     }
 
     @Override
     public void hide() {
-        if (view != null)
-            view.removeOnLayoutChangeListener(this);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+            removeListener();
         if (host != null)
             host = null;
     }
 
-    @Override
-    public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
-        dirty = true;
-        if (host != null) {
-            if (host.isInLayout()) {
-                host.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        host.requestLayout();
-                    }
-                });
-            }
-            else
-                host.requestLayout();
-        }
-    }
-    
     public static class Builder {
         private final Context context;
         private View view = null;
@@ -184,5 +174,29 @@ public class ViewActor implements Actor, View.OnLayoutChangeListener {
                 text = String.format(text, args);
             Log.v(TAG, text);
         }
+    }
+
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    private void addListener() {
+        if (host == null || view == null)
+            return;
+        listener = new View.OnLayoutChangeListener() {
+            @Override
+            public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                Logv("layout changed");
+                dirty = true;
+                if (host != null)
+                    host.forceLayout();
+            }
+        };
+        view.addOnLayoutChangeListener((View.OnLayoutChangeListener) listener);
+    }
+
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    private void removeListener() {
+        if (host == null || view == null || listener == null)
+            return;
+        view.removeOnLayoutChangeListener((View.OnLayoutChangeListener) listener);
+        listener = null;
     }
 }

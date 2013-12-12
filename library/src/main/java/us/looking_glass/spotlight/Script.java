@@ -16,19 +16,25 @@
 
 package us.looking_glass.spotlight;
 
-import android.animation.Animator;
-import android.animation.AnimatorSet;
-import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
+import android.os.Build;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+
+import com.nineoldandroids.animation.Animator;
+import com.nineoldandroids.animation.AnimatorSet;
+import com.nineoldandroids.animation.ObjectAnimator;
+import com.nineoldandroids.view.ViewHelper;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -40,17 +46,18 @@ import us.looking_glass.spotlight.actor.Actor;
 
 public class Script implements View.OnClickListener {
     private final static String TAG = Script.class.getSimpleName();
-    final static boolean debug = false;
+    final static boolean debug = true;
 
-    private final Activity activity;
     private List<Scene> scenes = new ArrayList<Scene>();
     private Iterator<Scene> sceneIterator = null;
-    private ViewGroup frame = null;
+    private final Activity activity;
+    private FrameLayout frame = null;
     private Scene scene = null;
     private Stage stage = null;
     private Stage nextStage = null;
     private SharedPreferences sharedPreferences = null;
     private boolean showAll;
+    private boolean inCrossfade = false;
 
     public static final  int NONE = 0;
     public static final int FADE = 1;
@@ -59,7 +66,7 @@ public class Script implements View.OnClickListener {
     public Script(Activity activity) {
         this.activity = activity;
     }
-    
+
     public Scene add(Scene scene) {
         scenes.add(scene);
         return scene;
@@ -67,6 +74,7 @@ public class Script implements View.OnClickListener {
 
     @Override
     public void onClick(View v) {
+        Logv("onClick: %s", v);
         scene.recordFired();
         stage.getButton().setOnClickListener(null);
         nextScene();
@@ -112,14 +120,17 @@ public class Script implements View.OnClickListener {
                         Logv("crossfade scenes");
                         setStage(true);
                         crossfade.playTogether(ObjectAnimator.ofFloat(stage, "alpha", 1, 0), ObjectAnimator.ofFloat(nextStage, "alpha", 0, 1));
+                        frame.addView(nextStage);
                         nextStage.show();
                         nextStage.setScene(scene);
-                        nextStage.setAlpha(0);
+                        ViewHelper.setAlpha(nextStage, 0);
+                        inCrossfade = true;
                     } else {
                         Logv("fade in first scene");
+                        setupStageBlending(stage);
                         stage.show();
                         stage.setScene(scene);
-                        stage.setAlpha(0);
+                        ViewHelper.setAlpha(stage, 0);
                         crossfade.play(ObjectAnimator.ofFloat(stage, "alpha", 0, 1));
                     }
                 } else {
@@ -132,15 +143,19 @@ public class Script implements View.OnClickListener {
                 crossfade.addListener(new Animator.AnimatorListener() {
                     @Override
                     public void onAnimationEnd(Animator animation) {
+                        Logv("animation complete");
                         if (!finalEnd) {
                             if (prevScene != null) {
                                 Logv("swap scenes");
                                 Stage tmpStage = nextStage;
                                 stage.hide();
+                                frame.removeView(stage);
                                 nextStage = stage;
                                 stage = tmpStage;
+                                inCrossfade = false;
                             }
                             Logv("%s %s", stage, stage != null ? stage.getButton() : null);
+                            Logv("%s %s", nextStage, nextStage == null ? null : nextStage.getVisibility());
                             stage.getButton().setOnClickListener(Script.this);
                         } else
                             hide();
@@ -153,6 +168,7 @@ public class Script implements View.OnClickListener {
 
                     @Override
                     public void onAnimationStart(Animator animation) {
+                        Logv("start animation");
                     }
                     @Override
                     public void onAnimationRepeat(Animator animation) {
@@ -166,25 +182,37 @@ public class Script implements View.OnClickListener {
         if (frame == null) {
             frame = new FrameLayout(activity);
             ((ViewGroup) activity.getWindow().getDecorView()).addView(frame);
-            Paint paint = null;
-            int layerType = View.LAYER_TYPE_SOFTWARE;
-            if (frame.isHardwareAccelerated()) {
-                layerType = View.LAYER_TYPE_HARDWARE;
-                paint = new Paint();
-                paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.OVERLAY));
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                Logv("layers setup");
+                Paint paint = null;
+                int layerType = View.LAYER_TYPE_SOFTWARE;
+                if (frame.isHardwareAccelerated()) {
+                    layerType = View.LAYER_TYPE_HARDWARE;
+                    paint = new Paint();
+                    paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.OVERLAY));
+                }
+                frame.setLayerType(layerType, paint);
+            } else {
+                Logv("caching setup");
+                frame.setDrawingCacheEnabled(true);
             }
-            frame.setLayerType(layerType, paint);
         }
         if (stage == null) {
             stage = new Stage(activity);
             frame.addView(stage);
         }
-        if (nextStage == null) {
+        if (next && nextStage == null) {
             nextStage = new Stage(activity);
-            stage.setLayerMode(PorterDuff.Mode.ADD);
-            nextStage.setLayerMode(PorterDuff.Mode.ADD);
-            frame.addView(nextStage);
+            setupStageBlending(stage);
+            setupStageBlending(nextStage);
         }
+    }
+
+    private static void setupStageBlending(Stage stage) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+            stage.setLayerMode(PorterDuff.Mode.ADD);
+        else
+            stage.setDrawingCacheEnabled(true);
     }
 
     public void show() {
@@ -199,12 +227,33 @@ public class Script implements View.OnClickListener {
         nextScene();
     }
 
+    private static int blend_pixel (int color1, int color2, float alpha) {
+        int ialpha = Math.round(alpha * 256);
+        return blend_part(color1, color2, ialpha) | (blend_part(color1 >> 8, color2 >> 8, ialpha) << 8);
+    }
+
+    private static int blend_part (int color1, int color2, int ialpha) {
+        final int mask = 0xff00ff;
+        color1 &= mask;
+        color2 &= mask;
+        color1 *= ialpha;
+        color1 += color2 * (256 - ialpha);
+        color1 += 0x800080;
+        color1 >>= 8;
+        color1 &= mask;
+        return color1;
+    }
+
     public void hide() {
         Logv("hide");
-        if (stage != null)
+        if (stage != null) {
             stage.setScene(null);
-        if (nextStage != null)
+            stage.hide();
+        }
+        if (nextStage != null) {
             nextStage.setScene(null);
+            nextStage.hide();
+        }
         if (frame != null)
             ((ViewGroup) activity.getWindow().getDecorView()).removeView(frame);
         sceneIterator = null;
@@ -286,7 +335,7 @@ public class Script implements View.OnClickListener {
         private void recordFired() {
             if (oneShotID < 0)
                 return;
-            getSharedPreferences().edit().putBoolean(prefsKey(), false).apply();
+            getSharedPreferences().edit().putBoolean(prefsKey(), false).commit();
         }
     }
 

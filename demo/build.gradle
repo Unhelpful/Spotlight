@@ -17,7 +17,7 @@ android {
     buildToolsVersion '18.1.0'
 
     defaultConfig {
-        minSdkVersion 11
+        minSdkVersion 7
         targetSdkVersion 19
     }
 
@@ -75,4 +75,5 @@ android {
 
 dependencies {
     compile project(':library');
+    compile 'com.android.support:appcompat-v7:18.0.+'
 }
